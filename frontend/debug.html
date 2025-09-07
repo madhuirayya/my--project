@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Event Creation</title>
+</head>
+<body>
+    <h1>Debug Event Creation</h1>
+    <form id="eventForm">
+        <input id="eventTitle" placeholder="Title" value="farewell"><br>
+        <input id="eventType" placeholder="Type" value="Fest"><br>
+        <input id="eventStart" type="datetime-local" placeholder="Start"><br>
+        <input id="eventEnd" type="datetime-local" placeholder="End"><br>
+        <input id="eventCollegeId" placeholder="College ID" value="3"><br>
+        <input id="eventDesc" placeholder="Description" value="its dancing"><br>
+        <button type="button" onclick="testEvent()">Test Event Creation</button>
+    </form>
+    <div id="result"></div>
+
+    <script>
+        const API = (path) => `http://localhost:8000${path}`;
+
+        async function testEvent() {
+            const title = document.getElementById('eventTitle').value;
+            const type = document.getElementById('eventType').value;
+            const start_time = document.getElementById('eventStart').value;
+            const end_time = document.getElementById('eventEnd').value;
+            const college_id_str = document.getElementById('eventCollegeId').value;
+            const description = document.getElementById('eventDesc').value;
+
+            console.log('Form values:', {title, type, start_time, end_time, college_id_str, description});
+
+            const college_id = parseInt(college_id_str);
+            if (isNaN(college_id) || college_id <= 0) {
+                alert('College ID must be a positive integer.');
+                return;
+            }
+
+            if (!title) {
+                alert('Event title is required.');
+                return;
+            }
+            if (!type) {
+                alert('Event type is required.');
+                return;
+            }
+            if (!start_time) {
+                alert('Event start time is required.');
+                return;
+            }
+            if (!end_time) {
+                alert('Event end time is required.');
+                return;
+            }
+
+            if (new Date(start_time) >= new Date(end_time)) {
+                alert('Event end time must be after start time.');
+                return;
+            }
+
+            const startISO = new Date(start_time).toISOString();
+            const endISO = new Date(end_time).toISOString();
+
+            console.log('Sending data:', {title,type,start_time: startISO,end_time: endISO,college_id,description});
+
+            try {
+                const r = await fetch(API('/events'), {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({title,type,start_time: startISO,end_time: endISO,college_id,description})
+                });
+                const responseText = await r.text();
+                console.log('Response:', r.status, responseText);
+                document.getElementById('result').innerText = `Status: ${r.status}\nResponse: ${responseText}`;
+                if (r.ok) {
+                    alert('Event created successfully!');
+                } else {
+                    alert('Error: ' + responseText);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').innerText = `Error: ${error.message}`;
+                alert('Error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
